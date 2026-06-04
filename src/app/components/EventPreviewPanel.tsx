@@ -1,6 +1,7 @@
 import { X, Calendar, Clock, MapPin, Users, Heart, Globe, Share2, Check, Bookmark, MessageCircle, ChevronRight, HandHeart } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { events, places, impactIdeas, categories, contributors, currentUser } from '../data/mock-data';
+import { events, places, impactIdeas, contributors, currentUser } from '../data/mock-data';
+import { getEventCategory, getPlaceCategory, LEGACY_CATEGORY_MAP } from '../data/categories';
 import { useState } from 'react';
 
 interface EventPreviewPanelProps {
@@ -21,7 +22,8 @@ export default function EventPreviewPanel({ id, type, onClose }: EventPreviewPan
 
   if (!item) return null;
 
-  const cat = categories.find(c => c.id === item.category);
+  const resolvedCat = LEGACY_CATEGORY_MAP[item.category] || item.category;
+  const cat = getEventCategory(resolvedCat) || getPlaceCategory(resolvedCat);
 
   const handleView = () => {
     if (type === 'event') navigate(`/event/${id}`);
@@ -55,7 +57,7 @@ export default function EventPreviewPanel({ id, type, onClose }: EventPreviewPan
           {/* Category badge */}
           <div className="absolute top-3 left-3">
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold text-white shadow-lg"
-              style={{ background: cat?.color || '#C9A84C' }}>
+              style={{ background: cat?.hex || '#C9A84C' }}>
               {cat?.name || 'Community'}
             </span>
           </div>

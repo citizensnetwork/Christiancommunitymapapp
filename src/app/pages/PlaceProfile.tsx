@@ -1,7 +1,8 @@
 import { useParams, useNavigate } from 'react-router';
 import { ArrowLeft, MapPin, Globe, Share2, MessageCircle, HandHeart, Camera, Clock, Users, ChevronRight, Heart } from 'lucide-react';
 import { useState } from 'react';
-import { places, categories, contributors, events, currentUser } from '../data/mock-data';
+import { places, contributors, events, currentUser } from '../data/mock-data';
+import { getEventCategory, getPlaceCategory, EVENT_CATEGORIES, LEGACY_CATEGORY_MAP } from '../data/categories';
 
 export default function PlaceProfile() {
   const { id } = useParams();
@@ -16,7 +17,7 @@ export default function PlaceProfile() {
     </div>
   );
 
-  const cat = categories.find(c => c.id === place.category);
+  const cat = getEventCategory(LEGACY_CATEGORY_MAP[place.category] || place.category) || getPlaceCategory(LEGACY_CATEGORY_MAP[place.category] || place.category);
   const org = contributors.find(c => c.id === place.organizerId);
   const placeEvents = events.filter(e => place.associatedEventIds.includes(e.id));
 
@@ -34,7 +35,7 @@ export default function PlaceProfile() {
         </button>
         <div className="absolute bottom-0 left-0 right-0 px-5 pb-5">
           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white mb-2 inline-block"
-            style={{ background: cat?.color }}>
+            style={{ background: cat?.hex }}>
             {cat?.name}
           </span>
           <h1 className="text-white text-2xl drop-shadow-lg">{place.name}</h1>

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Lightbulb, Plus, Heart, X, Users, ChevronRight, CheckCircle, Clock, Vote, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { impactIdeas, categories, currentUser } from '../data/mock-data';
+import { impactIdeas, currentUser } from '../data/mock-data';
+import { EVENT_CATEGORIES, LEGACY_CATEGORY_MAP } from '../data/categories';
 
 const statusConfig = {
   voting: { label: 'Voting Open', color: '#2563EB', bg: '#DBEAFE', icon: Vote },
@@ -75,7 +76,7 @@ export default function Community() {
           <div className="px-5 py-4 space-y-4 fade-in">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Active Voting Polls</p>
             {votingIdeas.map(idea => {
-              const cat = categories.find(c => c.id === idea.category);
+              const cat = EVENT_CATEGORIES.find(c => c.id === (LEGACY_CATEGORY_MAP[idea.category] || idea.category));
               const hasVoted = votes[idea.id];
               const currentVotes = idea.votes + (hasVoted ? 1 : 0);
               const progress = Math.min(100, (currentVotes / idea.threshold) * 100);
@@ -94,7 +95,7 @@ export default function Community() {
                         <div className="flex items-center gap-2 mb-1">
                           {cat && (
                             <span className="px-2 py-0.5 rounded-full text-[9px] font-bold"
-                              style={{ background: cat.bg, color: cat.color }}>{cat.name}</span>
+                              style={{ background: cat.bg, color: cat.hex }}>{cat.name}</span>
                           )}
                         </div>
                         <h4 className="text-sm font-bold text-foreground leading-snug">{idea.title}</h4>
@@ -151,11 +152,11 @@ export default function Community() {
               <div>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">⚙️ In Process</p>
                 {inProcessIdeas.map(idea => {
-                  const cat = categories.find(c => c.id === idea.category);
+                  const cat = EVENT_CATEGORIES.find(c => c.id === (LEGACY_CATEGORY_MAP[idea.category] || idea.category));
                   return (
                     <div key={idea.id} className="bg-card rounded-2xl border border-[#D97706]/30 p-4 mb-3">
                       <div className="flex items-center gap-2 mb-2">
-                        {cat && <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: cat.bg, color: cat.color }}>{cat.name}</span>}
+                        {cat && <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: cat.bg, color: cat.hex }}>{cat.name}</span>}
                         <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#FEF3C7] text-[#D97706]">In Process</span>
                       </div>
                       <h4 className="text-sm font-bold text-foreground mb-1">{idea.title}</h4>
@@ -175,11 +176,11 @@ export default function Community() {
               <div>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">✅ Confirmed Projects</p>
                 {confirmedProjects.map(idea => {
-                  const cat = categories.find(c => c.id === idea.category);
+                  const cat = EVENT_CATEGORIES.find(c => c.id === (LEGACY_CATEGORY_MAP[idea.category] || idea.category));
                   return (
                     <div key={idea.id} className="bg-card rounded-2xl border border-green-200 p-4 mb-3 bg-gradient-to-br from-white to-[#DCFCE7]/30">
                       <div className="flex items-center gap-2 mb-2">
-                        {cat && <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: cat.bg, color: cat.color }}>{cat.name}</span>}
+                        {cat && <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: cat.bg, color: cat.hex }}>{cat.name}</span>}
                         <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#DCFCE7] text-[#16A34A]">✅ Confirmed</span>
                       </div>
                       <h4 className="text-sm font-bold text-foreground mb-1">{idea.title}</h4>
@@ -247,14 +248,14 @@ export default function Community() {
                   <div>
                     <label className="block text-xs font-bold text-foreground mb-1.5">Category *</label>
                     <div className="grid grid-cols-2 gap-2">
-                      {categories.slice(0, 6).map(cat => (
+                      {EVENT_CATEGORIES.slice(0, 6).map(cat => (
                         <button
                           key={cat.id}
                           onClick={() => setNewIdea(p => ({ ...p, category: cat.id }))}
                           className={`py-2.5 px-3 rounded-xl text-xs font-bold text-left transition-all border ${
                             newIdea.category === cat.id ? 'border-transparent' : 'border-border'
                           }`}
-                          style={newIdea.category === cat.id ? { background: cat.color, color: '#fff' } : { background: cat.bg, color: cat.color }}
+                          style={newIdea.category === cat.id ? { background: cat.hex, color: '#fff' } : { background: cat.bg, color: cat.hex }}
                         >
                           {cat.name}
                         </button>

@@ -7,6 +7,7 @@ import ContributorProfile from './pages/ContributorProfile';
 import Messages from './pages/Messages';
 import Community from './pages/Community';
 import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import Settings from './pages/Settings';
 import Notifications from './pages/Notifications';
 
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
       { path: 'messages/:convId', Component: Messages },
       { path: 'community', Component: Community },
       { path: 'dashboard', Component: Dashboard },
+      { path: 'admin', Component: AdminDashboard },
       { path: 'settings', Component: Settings },
       { path: 'notifications', Component: Notifications },
     ],

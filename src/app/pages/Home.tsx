@@ -1,19 +1,20 @@
-import { useState } from 'react';
-import { Search, SlidersHorizontal, Lightbulb, Music, Hand, Star, Heart, Users, X, Crown, Settings } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Search, SlidersHorizontal, Lightbulb, X, Settings, Crown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import KingdomMap from '../components/map/KingdomMap';
+import MapLibreMap, { MapPin } from '../components/map/MapLibreMap';
 import EventPreviewPanel from '../components/EventPreviewPanel';
 import CategoryPanel from '../components/CategoryPanel';
-import { categories, currentUser } from '../data/mock-data';
-
-const quickFilterIcons: Record<string, React.ElementType> = {
-  Music, Hand, Star, Heart, Users,
-};
-
-const QUICK_FILTER_IDS = ['worship', 'prayer', 'youth', 'outreach', 'community'];
+import ProfilePanel from '../components/layout/ProfilePanel';
+import { EVENT_CATEGORIES, getEventCategory, getPlaceCategory, LEGACY_CATEGORY_MAP } from '../data/categories';
+import { useMapData } from '../hooks/useMapData';
+import { impactIdeas } from '../data/mock-data';
+import { useUser } from '../context/UserContext';
 
 export default function Home() {
   const navigate = useNavigate();
+  const { user, role } = useUser();
+  const { events, places, loading } = useMapData();
+
   const [selectedPin, setSelectedPin] = useState<string | null>(null);
   const [selectedPinType, setSelectedPinType] = useState<'event' | 'place' | 'idea'>('event');
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
@@ -21,142 +22,224 @@ export default function Home() {
   const [showIdeas, setShowIdeas] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
+  const [showProfilePanel, setShowProfilePanel] = useState(false);
+
+  const pillsRef = useRef<HTMLDivElement>(null);
+
+  // Build map pins from server data
+  const eventPins: MapPin[] = events.map(e => ({
+    id: e.id, type: 'event', title: e.title, category: e.category,
+    lng: e.lng, lat: e.lat, isLive: e.isLive, isBusy: e.isBusy,
+    broadcastMessage: e.broadcastMessage,
+  }));
+  const placePins: MapPin[] = places.map(p => ({
+    id: p.id, type: 'place', title: p.name, category: p.category,
+    lng: p.lng, lat: p.lat,
+  }));
+  const ideaPins: MapPin[] = showIdeas
+    ? impactIdeas.filter(i => i.status === 'voting').map(i => ({
+        id: i.id, type: 'idea', title: i.title, category: i.category,
+        lng: (28.03 + Math.random() * 0.05), lat: (-26.22 + Math.random() * 0.03),
+      }))
+    : [];
+
+  const allPins: MapPin[] = [...eventPins, ...placePins, ...ideaPins];
 
   const handlePinClick = (id: string, type: 'event' | 'place' | 'idea') => {
-    if (selectedPin === id) {
-      setSelectedPin(null);
-    } else {
-      setSelectedPin(id);
-      setSelectedPinType(type);
-    }
+    setSelectedPin(prev => prev === id ? null : id);
+    setSelectedPinType(type);
+  };
+
+  const scrollPills = (dir: 'left' | 'right') => {
+    if (!pillsRef.current) return;
+    pillsRef.current.scrollBy({ left: dir === 'left' ? -180 : 180, behavior: 'smooth' });
   };
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative" style={{ height: '100%' }}>
       {/* Full-screen map */}
       <div className="absolute inset-0" onClick={() => setSelectedPin(null)}>
-        <KingdomMap
+        <MapLibreMap
+          pins={allPins}
           filterCategory={filterCategory}
-          onPinClick={handlePinClick}
           selectedPin={selectedPin}
-          showIdeas={showIdeas}
+          onPinClick={handlePinClick}
         />
       </div>
 
-      {/* Top search bar & controls */}
-      <div className="absolute top-0 left-0 right-0 z-30 px-4 pt-4 flex gap-2 items-start">
+      {/* ── Top bar ─────────────────────────────────────────────────── */}
+      <div className="absolute top-0 left-0 right-0 z-30 px-3 pt-3 flex gap-2 items-center">
         {/* Search */}
-        <div className={`flex-1 glass rounded-2xl shadow-xl border transition-all ${searchFocused ? 'border-[#C9A84C]/50 shadow-[0_0_0_3px_rgba(201,168,76,0.12)]' : 'border-white/60'}`}>
+        <div className={`flex-1 glass rounded-2xl shadow-xl border transition-all ${
+          searchFocused ? 'border-[#C9A84C]/50 shadow-[0_0_0_3px_rgba(201,168,76,0.1)]' : 'border-white/60'
+        }`}>
           <div className="flex items-center gap-2 px-4 py-3">
-            <Search size={16} className="text-[#C9A84C] shrink-0" />
+            <Search size={15} className="text-[#C9A84C] shrink-0" />
             <input
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
-              placeholder="Search events, places, people..."
+              placeholder="Search events, places, people…"
               className="flex-1 text-sm bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground"
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')}>
-                <X size={14} className="text-muted-foreground" />
+                <X size={13} className="text-muted-foreground" />
               </button>
             )}
           </div>
         </div>
 
-        {/* Filter button */}
+        {/* Filter */}
         <button
           onClick={() => setShowCategories(true)}
-          className={`w-12 h-12 glass rounded-2xl shadow-xl border flex items-center justify-center transition-all ${filterCategory ? 'border-[#C9A84C]/60 bg-[#C9A84C]/10' : 'border-white/60'}`}
-        >
-          <SlidersHorizontal size={17} className={filterCategory ? 'text-[#C9A84C]' : 'text-foreground/60'} />
-        </button>
-
-        {/* User avatar */}
-        <button
-          onClick={() => navigate(`/profile/${currentUser.id}`)}
-          className="w-12 h-12 glass rounded-2xl shadow-xl border border-white/60 overflow-hidden"
-        >
-          <img src={currentUser.profilePhoto} alt={currentUser.name} className="w-full h-full object-cover" />
-        </button>
-      </div>
-
-      {/* Quick filters */}
-      <div className="absolute top-20 left-4 right-4 z-20 flex gap-2 overflow-x-auto scrollbar-none pb-1">
-        {QUICK_FILTER_IDS.map(catId => {
-          const cat = categories.find(c => c.id === catId)!;
-          const Icon = quickFilterIcons[cat.icon] || Music;
-          const isActive = filterCategory === catId;
-          return (
-            <button
-              key={catId}
-              onClick={() => setFilterCategory(isActive ? null : catId)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-lg ${
-                isActive ? 'text-white shadow-xl scale-105' : 'glass text-foreground/70 border border-white/60'
-              }`}
-              style={isActive ? { background: cat.color } : {}}
-            >
-              <Icon size={12} strokeWidth={2.5} />
-              {cat.name}
-            </button>
-          );
-        })}
-
-        {/* Ideas toggle */}
-        <button
-          onClick={() => setShowIdeas(!showIdeas)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-lg ${
-            showIdeas ? 'bg-[#C9A84C] text-white shadow-xl scale-105' : 'glass text-foreground/70 border border-white/60'
+          className={`w-11 h-11 glass rounded-2xl shadow-xl border flex items-center justify-center shrink-0 transition-all ${
+            filterCategory ? 'border-[#C9A84C]/60 bg-[#C9A84C]/10' : 'border-white/60'
           }`}
         >
-          <Lightbulb size={12} strokeWidth={2.5} />
-          Ideas
+          <SlidersHorizontal size={16} className={filterCategory ? 'text-[#C9A84C]' : 'text-foreground/60'} />
+        </button>
+
+        {/* Profile avatar (mobile + top-bar) */}
+        <div className="relative shrink-0">
+          <button
+            onClick={() => setShowProfilePanel(s => !s)}
+            className="w-11 h-11 glass rounded-2xl shadow-xl border border-white/60 overflow-hidden relative"
+          >
+            <img src={user.profilePhoto} alt={user.name} className="w-full h-full object-cover" />
+            {role !== 'citizen' && (
+              <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-[#C9A84C] border-2 border-white flex items-center justify-center">
+                <Crown size={7} className="text-white" />
+              </span>
+            )}
+          </button>
+          {showProfilePanel && (
+            <ProfilePanel onClose={() => setShowProfilePanel(false)} anchor="top" />
+          )}
+        </div>
+      </div>
+
+      {/* ── Scrollable category pills ─────────────────────────────── */}
+      <div className="absolute top-[60px] left-0 right-0 z-20 flex items-center gap-1 px-2">
+        {/* Left scroll arrow */}
+        <button
+          onClick={() => scrollPills('left')}
+          className="glass w-7 h-7 rounded-full border border-white/60 flex items-center justify-center shadow-md shrink-0"
+        >
+          <ChevronLeft size={13} className="text-foreground/60" />
+        </button>
+
+        {/* Pill strip */}
+        <div
+          ref={pillsRef}
+          className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-none"
+          style={{ scrollbarWidth: 'none' }}
+        >
+          {/* All / clear */}
+          <button
+            onClick={() => setFilterCategory(null)}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all shadow-sm shrink-0 ${
+              !filterCategory
+                ? 'bg-foreground text-background'
+                : 'glass text-foreground/60 border border-white/60'
+            }`}
+          >
+            All
+          </button>
+
+          {EVENT_CATEGORIES.map(cat => {
+            const { Icon } = cat;
+            const isActive = filterCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setFilterCategory(isActive ? null : cat.id)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all shadow-sm shrink-0"
+                style={
+                  isActive
+                    ? { background: cat.hex, color: '#fff', boxShadow: `0 3px 12px ${cat.hex}55` }
+                    : { background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(12px)', color: cat.hex, border: `1px solid ${cat.hex}40` }
+                }
+              >
+                <Icon size={11} strokeWidth={2.5} />
+                {cat.short}
+              </button>
+            );
+          })}
+
+          {/* Ideas toggle */}
+          <button
+            onClick={() => setShowIdeas(s => !s)}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all shadow-sm shrink-0 ${
+              showIdeas
+                ? 'bg-[#C9A84C] text-white'
+                : 'glass text-[#C9A84C] border border-[#C9A84C]/40'
+            }`}
+          >
+            <Lightbulb size={11} strokeWidth={2.5} />
+            Ideas
+          </button>
+        </div>
+
+        {/* Right scroll arrow */}
+        <button
+          onClick={() => scrollPills('right')}
+          className="glass w-7 h-7 rounded-full border border-white/60 flex items-center justify-center shadow-md shrink-0"
+        >
+          <ChevronRight size={13} className="text-foreground/60" />
         </button>
       </div>
 
-      {/* Active filter indicator */}
-      {filterCategory && (
-        <div className="absolute top-32 left-1/2 -translate-x-1/2 z-20 fade-in">
+      {/* Active filter pill (centre) */}
+      {filterCategory && (() => {
+        const cat = getEventCategory(filterCategory);
+        return cat ? (
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20 fade-in">
+            <div className="glass px-3 py-1.5 rounded-full shadow-lg flex items-center gap-2 border border-white/60">
+              <span className="text-xs font-semibold text-foreground">{cat.name}</span>
+              <button onClick={() => setFilterCategory(null)}>
+                <X size={11} className="text-muted-foreground" />
+              </button>
+            </div>
+          </div>
+        ) : null;
+      })()}
+
+      {/* Loading indicator */}
+      {loading && (
+        <div className="absolute top-28 left-1/2 -translate-x-1/2 z-20">
           <div className="glass px-3 py-1.5 rounded-full shadow-lg flex items-center gap-2 border border-white/60">
-            <span className="text-xs font-semibold text-foreground">
-              Filtered: {categories.find(c => c.id === filterCategory)?.name}
-            </span>
-            <button onClick={() => setFilterCategory(null)} className="text-muted-foreground hover:text-foreground">
-              <X size={12} />
-            </button>
+            <div className="w-3 h-3 border border-[#C9A84C] border-t-transparent rounded-full animate-spin" />
+            <span className="text-[10px] font-semibold text-muted-foreground">Loading map data…</span>
           </div>
         </div>
       )}
 
       {/* Map legend */}
-      <div className="absolute bottom-32 left-4 z-20 md:bottom-8">
-        <div className="glass rounded-xl p-3 border border-white/60 shadow-lg space-y-1.5">
-          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Map Key</p>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-red-500 relative">
-              <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-50" />
+      <div className="absolute bottom-32 left-3 z-20 md:bottom-6">
+        <div className="glass rounded-xl p-2.5 border border-white/60 shadow-lg space-y-1.5">
+          <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">Map Key</p>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-red-500 relative flex items-center justify-center">
+              <span className="absolute inset-0 rounded-full bg-red-400 animate-ping opacity-50" />
             </span>
-            <span className="text-[10px] text-foreground/70">Live Event</span>
+            <span className="text-[10px] text-foreground/70">Live</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-xl bg-[#0A0908]" />
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded border border-foreground/30 bg-white/70" />
             <span className="text-[10px] text-foreground/70">Place</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-md bg-[#C9A84C]" />
-            <span className="text-[10px] text-foreground/70">Impact Idea</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded border border-[#C9A84C]/60 bg-[#F2E8CC]" />
+            <span className="text-[10px] text-foreground/70">Idea</span>
           </div>
         </div>
       </div>
 
       {/* Event preview panel */}
       {selectedPin && (
-        <EventPreviewPanel
-          id={selectedPin}
-          type={selectedPinType}
-          onClose={() => setSelectedPin(null)}
-        />
+        <EventPreviewPanel id={selectedPin} type={selectedPinType} onClose={() => setSelectedPin(null)} />
       )}
 
       {/* Category panel overlay */}

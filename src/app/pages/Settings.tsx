@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { ArrowLeft, Camera, Bell, Eye, User, Lock, Globe, ChevronRight, Check, Crown, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { currentUser, categories } from '../data/mock-data';
+import { currentUser } from '../data/mock-data';
+import { EVENT_CATEGORIES, LEGACY_CATEGORY_MAP } from '../data/categories';
 
 const QUICK_FILTER_IDS = ['worship', 'prayer', 'youth', 'outreach', 'community'];
 
@@ -146,14 +147,14 @@ export default function Settings() {
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Interests</p>
           <p className="text-xs text-muted-foreground mb-4">We'll use these to personalise your map layers</p>
           <div className="flex flex-wrap gap-2">
-            {categories.map(cat => {
+            {EVENT_CATEGORIES.map(cat => {
               const selected = interests.includes(cat.id);
               return (
                 <button
                   key={cat.id}
                   onClick={() => toggleInterest(cat.id)}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold transition-all border"
-                  style={selected ? { background: cat.color, color: '#fff', border: `1px solid ${cat.color}` } : { background: cat.bg, color: cat.color, border: `1px solid ${cat.color}40` }}
+                  style={selected ? { background: cat.hex, color: '#fff', border: `1px solid ${cat.hex}` } : { background: cat.bg, color: cat.hex, border: `1px solid ${cat.hex}40` }}
                 >
                   {selected && <Check size={10} />}
                   {cat.name}
@@ -168,14 +169,14 @@ export default function Settings() {
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Quick Filters</p>
           <p className="text-xs text-muted-foreground mb-4">Choose up to 5 categories to show as quick filters on the home screen</p>
           <div className="flex flex-wrap gap-2">
-            {categories.map(cat => {
+            {EVENT_CATEGORIES.map(cat => {
               const selected = quickFilters.includes(cat.id);
               return (
                 <button
                   key={cat.id}
                   onClick={() => toggleQuickFilter(cat.id)}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold transition-all border"
-                  style={selected ? { background: cat.color, color: '#fff', border: `1px solid ${cat.color}` } : { background: '#fff', color: '#7A7060', border: '1px solid rgba(0,0,0,0.1)' }}
+                  style={selected ? { background: cat.hex, color: '#fff', border: `1px solid ${cat.hex}` } : { background: '#fff', color: '#7A7060', border: '1px solid rgba(0,0,0,0.1)' }}
                 >
                   {cat.name}
                   {selected && <Check size={10} />}

@@ -1,7 +1,8 @@
 import { useParams, useNavigate } from 'react-router';
 import { ArrowLeft, Share2, MessageCircle, Globe, Users, Heart, ChevronRight, Star, MapPin, Calendar, Mail, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
-import { contributors, events, places, categories } from '../data/mock-data';
+import { contributors, events, places } from '../data/mock-data';
+import { getEventCategory, getPlaceCategory, EVENT_CATEGORIES, LEGACY_CATEGORY_MAP } from '../data/categories';
 
 const involvementColors: Record<string, string> = {
   Beacon: '#C9A84C',
@@ -23,7 +24,7 @@ export default function ContributorProfile() {
     </div>
   );
 
-  const cat = categories.find(c => c.id === contributor.category);
+  const cat = getEventCategory(LEGACY_CATEGORY_MAP[contributor.category] || contributor.category);
   const orgEvents = events.filter(e => e.organizerId === id);
   const orgPlaces = places.filter(p => p.organizerId === id);
   const collabOrgs = contributors.filter(c => contributor.collaborators.includes(c.id));
@@ -65,7 +66,7 @@ export default function ContributorProfile() {
         {/* Category badge */}
         {cat && (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-3"
-            style={{ background: cat.bg, color: cat.color }}>
+            style={{ background: cat?.bg, color: cat?.hex }}>
             {cat.name}
           </span>
         )}

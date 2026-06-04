@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { LayoutDashboard, Plus, Eye, MessageCircle, Users, Radio, TrendingUp, Calendar, MapPin, Settings, ChevronRight, CheckCircle, Pencil, Star } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { events, places, categories, contributors, conversations } from '../data/mock-data';
+import { events, places, contributors, conversations } from '../data/mock-data';
+import { getEventCategory, EVENT_CATEGORIES, LEGACY_CATEGORY_MAP } from '../data/categories';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const myContributor = contributors[0];
@@ -156,7 +157,7 @@ export default function Dashboard() {
               </button>
 
               {myEvents.map(event => {
-                const cat = categories.find(c => c.id === event.category);
+                const cat = getEventCategory(LEGACY_CATEGORY_MAP[event.category] || event.category);
                 return (
                   <div key={event.id} className="bg-card rounded-2xl border border-border overflow-hidden">
                     <div className="relative h-28">
@@ -170,7 +171,7 @@ export default function Dashboard() {
                       )}
                       <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between">
                         <p className="text-white text-xs font-bold drop-shadow truncate">{event.title}</p>
-                        <span className="text-[9px] font-bold text-white px-1.5 py-0.5 rounded shrink-0" style={{ background: cat?.color }}>
+                        <span className="text-[9px] font-bold text-white px-1.5 py-0.5 rounded shrink-0" style={{ background: cat?.hex }}>
                           {cat?.name}
                         </span>
                       </div>

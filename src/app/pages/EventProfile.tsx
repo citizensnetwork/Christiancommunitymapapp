@@ -1,7 +1,8 @@
 import { useParams, useNavigate } from 'react-router';
 import { ArrowLeft, Calendar, Clock, MapPin, Users, Heart, Globe, Share2, Check, Bookmark, MessageCircle, HandHeart, Camera, Radio, ChevronRight, Star } from 'lucide-react';
 import { useState } from 'react';
-import { events, categories, contributors, currentUser } from '../data/mock-data';
+import { events, contributors, currentUser } from '../data/mock-data';
+import { getEventCategory, getPlaceCategory, EVENT_CATEGORIES, LEGACY_CATEGORY_MAP } from '../data/categories';
 
 export default function EventProfile() {
   const { id } = useParams();
@@ -17,7 +18,7 @@ export default function EventProfile() {
     </div>
   );
 
-  const cat = categories.find(c => c.id === event.category);
+  const cat = getEventCategory(LEGACY_CATEGORY_MAP[event.category] || event.category);
   const org = contributors.find(c => c.id === event.organizerId);
 
   return (
@@ -51,7 +52,7 @@ export default function EventProfile() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
-                  style={{ background: cat?.color }}>
+                  style={{ background: cat?.hex }}>
                   {cat?.name}
                 </span>
                 {event.volunteeringEnabled && (
