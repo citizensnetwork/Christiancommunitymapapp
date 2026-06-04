@@ -1,9 +1,5 @@
-import { Music, Hand, Star, Heart, Users, Palette, BookOpen, Coffee, Globe, Zap, MapPin, Lightbulb } from 'lucide-react';
-import { categories } from '../../data/mock-data';
-
-const iconMap: Record<string, React.ElementType> = {
-  Music, Hand, Star, Heart, Users, Palette, BookOpen, Coffee, Globe, Zap, MapPin, Lightbulb,
-};
+import { MapPin, Lightbulb } from 'lucide-react';
+import { getEventCategory, LEGACY_CATEGORY_MAP } from '../../data/categories';
 
 interface PinEvent {
   id: string;
@@ -25,11 +21,10 @@ interface EventPinProps {
 }
 
 export default function EventPin({ event, type, isSelected, onClick }: EventPinProps) {
-  const cat = categories.find(c => c.id === event.category);
-  const color = type === 'idea' ? '#C9A84C' : (cat?.color ?? '#0A0908');
+  const cat = getEventCategory(LEGACY_CATEGORY_MAP[event.category] || event.category);
+  const color = type === 'idea' ? '#C9A84C' : (cat?.hex ?? '#0A0908');
   const bg = type === 'idea' ? '#F2E8CC' : (cat?.bg ?? '#F5F5F5');
-  const iconName = type === 'idea' ? 'Lightbulb' : type === 'place' ? 'MapPin' : (cat?.icon ?? 'MapPin');
-  const Icon = iconMap[iconName] || MapPin;
+  const Icon = type === 'idea' ? Lightbulb : (cat?.Icon ?? MapPin);
 
   return (
     <div

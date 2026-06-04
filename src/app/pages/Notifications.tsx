@@ -9,6 +9,7 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string; bg: s
   convince: { icon: Heart, color: '#EC4899', bg: '#FCE7F3' },
   message: { icon: MessageCircle, color: '#16A34A', bg: '#DCFCE7' },
   idea: { icon: Lightbulb, color: '#D97706', bg: '#FEF3C7' },
+  event: { icon: Bell, color: '#5D6D7E', bg: '#5D6D7E18' },
 };
 
 export default function Notifications() {
@@ -29,6 +30,7 @@ export default function Notifications() {
     else if (notif.type === 'convince' && (notif as any).eventId) navigate(`/event/${(notif as any).eventId}`);
     else if (notif.type === 'friend' && (notif as any).userId) navigate(`/profile/${(notif as any).userId}`);
     else if (notif.type === 'idea') navigate('/community');
+    else if (notif.type === 'event' && (notif as any).eventId) navigate(`/event/${(notif as any).eventId}`);
   };
 
   return (

@@ -7,13 +7,25 @@ import CategoryPanel from '../components/CategoryPanel';
 import ProfilePanel from '../components/layout/ProfilePanel';
 import { EVENT_CATEGORIES, getEventCategory, getPlaceCategory, LEGACY_CATEGORY_MAP } from '../data/categories';
 import { useMapData } from '../hooks/useMapData';
-import { impactIdeas } from '../data/mock-data';
+import { impactIdeas, events as mockEvents, places as mockPlaces } from '../data/mock-data';
 import { useUser } from '../context/UserContext';
 
 export default function Home() {
   const navigate = useNavigate();
   const { user, role } = useUser();
-  const { events, places, loading } = useMapData();
+  const { events: serverEvents, places: serverPlaces, loading } = useMapData();
+
+  // Fall back to local mock data if server hasn't returned data yet
+  const liveEvents = serverEvents.length > 0 ? serverEvents : mockEvents.map(e => ({
+    ...e, lng: e.mapX ? 28.00 + (e.mapX / 100) * 0.12 : 28.0473, lat: e.mapY ? -26.24 + (e.mapY / 100) * 0.07 : -26.2041,
+    endTime: e.endTime ?? '', organizerName: e.organizerName ?? '', tags: e.tags ?? [],
+    upcomingDates: e.upcomingDates ?? [], broadcastMessage: e.broadcastMessage ?? null,
+  }));
+  const livePlaces = serverPlaces.length > 0 ? serverPlaces : mockPlaces.map(p => ({
+    ...p, lng: p.mapX ? 28.00 + (p.mapX / 100) * 0.12 : 28.0473, lat: p.mapY ? -26.24 + (p.mapY / 100) * 0.07 : -26.2041,
+    openHours: p.openHours ?? '', description: p.description ?? '', organizerName: p.organizerName ?? '',
+    associatedEventIds: p.associatedEventIds ?? [],
+  }));
 
   const [selectedPin, setSelectedPin] = useState<string | null>(null);
   const [selectedPinType, setSelectedPinType] = useState<'event' | 'place' | 'idea'>('event');
@@ -26,13 +38,13 @@ export default function Home() {
 
   const pillsRef = useRef<HTMLDivElement>(null);
 
-  // Build map pins from server data
-  const eventPins: MapPin[] = events.map(e => ({
+  // Build map pins from server data (with local fallback)
+  const eventPins: MapPin[] = liveEvents.map(e => ({
     id: e.id, type: 'event', title: e.title, category: e.category,
     lng: e.lng, lat: e.lat, isLive: e.isLive, isBusy: e.isBusy,
     broadcastMessage: e.broadcastMessage,
   }));
-  const placePins: MapPin[] = places.map(p => ({
+  const placePins: MapPin[] = livePlaces.map(p => ({
     id: p.id, type: 'place', title: p.name, category: p.category,
     lng: p.lng, lat: p.lat,
   }));
@@ -121,7 +133,7 @@ export default function Home() {
       </div>
 
       {/* ── Scrollable category pills ─────────────────────────────── */}
-      <div className="absolute top-[60px] left-0 right-0 z-20 flex items-center gap-1 px-2">
+      <div className="absolute top-[72px] left-0 right-0 z-20 flex items-center gap-1 px-2">
         {/* Left scroll arrow */}
         <button
           onClick={() => scrollPills('left')}
@@ -195,7 +207,7 @@ export default function Home() {
       {filterCategory && (() => {
         const cat = getEventCategory(filterCategory);
         return cat ? (
-          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20 fade-in">
+          <div className="absolute top-[120px] left-1/2 -translate-x-1/2 z-20 fade-in">
             <div className="glass px-3 py-1.5 rounded-full shadow-lg flex items-center gap-2 border border-white/60">
               <span className="text-xs font-semibold text-foreground">{cat.name}</span>
               <button onClick={() => setFilterCategory(null)}>
@@ -208,7 +220,7 @@ export default function Home() {
 
       {/* Loading indicator */}
       {loading && (
-        <div className="absolute top-28 left-1/2 -translate-x-1/2 z-20">
+        <div className="absolute top-[120px] left-1/2 -translate-x-1/2 z-20">
           <div className="glass px-3 py-1.5 rounded-full shadow-lg flex items-center gap-2 border border-white/60">
             <div className="w-3 h-3 border border-[#C9A84C] border-t-transparent rounded-full animate-spin" />
             <span className="text-[10px] font-semibold text-muted-foreground">Loading map data…</span>
